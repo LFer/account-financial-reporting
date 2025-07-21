@@ -21,8 +21,6 @@ class OutstandingStatementWizard(models.TransientModel):
         )
         ctx = self.env.context.copy()
         if ctx.get("from_menu", False):
-            import ipdb;ipdb.set_trace()
-
             partner_domain = [('invoice_date_due', '<', date.today().isoformat()),('state', '=', 'posted'),('payment_state', 'in', ('not_paid', 'partial')),]
             if self.account_type == 'asset_receivable':
                 partner_domain.append(('move_type', 'in', ('out_invoice', 'out_refund')))
