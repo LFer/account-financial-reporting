@@ -144,17 +144,93 @@
             </div>
         </t>
     </template>
+
     <template id="outstanding_statement">
         <t t-call="web.html_container">
-            <t t-foreach="docs" t-as="o">
-                <t t-set="d" t-value="data.get(o.id)"/>
-                <t
-                    t-call="partner_statement.outstanding_statement_document"
-                    t-lang="o.lang"
-                />
+            <t t-if="not context.get('hide_detailed', False)">
+                <t t-foreach="docs" t-as="o">
+                    <t t-set="d" t-value="data.get(o.id)"/>
+                    <t
+                        t-call="partner_statement.outstanding_statement_document"
+                        t-lang="o.lang"
+                    />
+                </t>
+            </t>
+            <t t-else="">
+                <t t-call="partner_statement.all_partners_outstanding_statement_document"/>
             </t>
         </t>
     </template>
+
+    <template id="all_partners_outstanding_statement_document">
+        <t t-call="web.external_layout">
+<!--            <t t-set="o" t-value="o.with_context({'lang': lang})"/>-->
+<!--            <t t-set="address">-->
+<!--                <address-->
+<!--                    t-out="get_inv_addr(o)"-->
+<!--                    t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}'-->
+<!--                />-->
+<!--                <div t-if="o.vat" class="mt16"><t-->
+<!--                    t-out="company.country_id.vat_label or 'Tax ID'"-->
+<!--                />:-->
+<!--                    <span t-field="o.vat"/>-->
+<!--                </div>-->
+<!--            </t>-->
+            <div class="page">
+                <div class="oe_structure"/>
+                <h2>Statement of Accounts</h2>
+<!--                <div id="informations" class="row mt32 mb32">-->
+<!--                    <div class="col-3 bm-2">-->
+<!--                        <strong>Date:</strong>-->
+<!--                        <p t-out="data.get(docs[0])['today']" class="m-0"/>-->
+<!--                    </div>-->
+<!--                </div>-->
+                <t t-set="result_parsed_data" t-value="docs[0]._order_outstanding_statement_dict(data)"/>
+                <t t-set="parsed_data" t-value="result_parsed_data[0]"/>
+                <t t-set="final_balances" t-value="result_parsed_data[1]"/>
+
+
+                <table class="table table-sm table-statement">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Fecha</th>
+                            <th>Moneda</th>
+                            <th class="amount">Original</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="parsed_data" t-as="info">
+                            <td>
+                                <span t-out="info['name']"/>
+                            </td>
+                            <td>
+                                <span t-out="info['date']"/>
+                            </td>
+                            <td>
+                                <span t-out="info['currency_id']"/>
+                            </td>
+                            <td class="amount">
+                                <span t-out="info['currency_id'] + ' ' + str(info['amount'])"/>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-sm table-statement">
+                    <thead>
+                        <t t-foreach="final_balances.items()" t-as="key_value_balances">
+                            <tr>
+                                <th>Saldo final en <t t-out="key_value_balances[0]"/></th>
+                                <th class="amount"><span t-out="key_value_balances[0] + ' ' + str(key_value_balances[1])"/></th>
+                            </tr>
+                        </t>
+                    </thead>
+                </table>
+            </div>
+        </t>
+    </template>
+
     <record id="action_print_outstanding_statement" model="ir.actions.report">
         <field name="name">Outstanding Statement</field>
         <field name="model">res.partner</field>
@@ -169,6 +245,13 @@
         <field name="report_type">qweb-html</field>
         <field name="report_file">partner_statement.outstanding_statement</field>
     </record>
+<!--    <record id="action_print_all_partners_outstanding_statement_html" model="ir.actions.report">-->
+<!--        <field name="name">Outstanding Statement</field>-->
+<!--        <field name="model">res.partner</field>-->
+<!--        <field name="report_name">partner_statement.all_partners_outstanding_statement</field>-->
+<!--        <field name="report_type">qweb-html</field>-->
+<!--        <field name="report_file">partner_statement.all_partners_outstanding_statement</field>-->
+<!--    </record>-->
     <record id="action_print_outstanding_statement_xlsx" model="ir.actions.report">
         <field name="name">Outstanding Statement XLSX</field>
         <field name="model">res.partner</field>

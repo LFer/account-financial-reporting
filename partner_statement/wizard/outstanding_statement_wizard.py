@@ -38,6 +38,8 @@ class OutstandingStatementWizard(models.TransientModel):
             report_name = "p_s.report_outstanding_statement_xlsx"
         else:
             report_name = "partner_statement.outstanding_statement"
+
+        self = self.with_context(hide_detailed=self.hide_detailed)
         partners = self.env["res.partner"].browse(data["partner_ids"])
         return (
             self.env["ir.actions.report"]
