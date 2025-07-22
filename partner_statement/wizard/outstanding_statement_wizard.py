@@ -26,7 +26,7 @@ class OutstandingStatementWizard(models.TransientModel):
                 partner_domain.append(('move_type', 'in', ('out_invoice', 'out_refund')))
             if self.account_type == 'liability_payable':
                 partner_domain.append(('move_type', 'in', ('in_invoice', 'in_refund')))
-            partners = self.env['account.move'].search(partner_domain, limit=3).mapped('partner_id')
+            partners = self.env['account.move'].search(partner_domain).mapped('partner_id')
             res["partner_ids"] = partners.ids
 
         return res
