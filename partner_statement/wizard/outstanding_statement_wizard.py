@@ -27,7 +27,9 @@ class OutstandingStatementWizard(models.TransientModel):
             if self.account_type == 'liability_payable':
                 partner_domain.append(('move_type', 'in', ('in_invoice', 'in_refund')))
             partners = self.env['account.move'].search(partner_domain).mapped('partner_id')
+
             res["partner_ids"] = partners.ids
+
 
         return res
 
@@ -40,6 +42,11 @@ class OutstandingStatementWizard(models.TransientModel):
             report_name = "partner_statement.outstanding_statement"
 
         self = self.with_context(hide_detailed=self.hide_detailed)
+
+        consumidor_final_id = self.env.ref('l10n_uy_einvoice_base.consumidor_final_partner_id', raise_if_not_found=False)
+        if consumidor_final_id and data["partner_ids"] != [consumidor_final_id.id]:
+            data['partner_ids'].remove(consumidor_final_id.id)
+
         partners = self.env["res.partner"].browse(data["partner_ids"])
         return (
             self.env["ir.actions.report"]

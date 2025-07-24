@@ -211,7 +211,7 @@
                                 <span t-out="info['currency_id']"/>
                             </td>
                             <td class="amount">
-                                <span t-out="info['currency_id'] + ' ' + str(info['amount'])"/>
+                                <span t-out="info['currency_id'] + ' ' + str(round(info['amount'], 3))"/>
                             </td>
                         </tr>
                     </tbody>
@@ -222,7 +222,7 @@
                         <t t-foreach="final_balances.items()" t-as="key_value_balances">
                             <tr>
                                 <th>Saldo final en <t t-out="key_value_balances[0]"/></th>
-                                <th class="amount"><span t-out="key_value_balances[0] + ' ' + str(key_value_balances[1])"/></th>
+                                <th class="amount"><span t-out="key_value_balances[0] + ' ' + str(round(key_value_balances[1], 3))"/></th>
                             </tr>
                         </t>
                     </thead>
