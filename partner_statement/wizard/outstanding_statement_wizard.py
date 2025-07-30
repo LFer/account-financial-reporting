@@ -45,7 +45,8 @@ class OutstandingStatementWizard(models.TransientModel):
 
         consumidor_final_id = self.env.ref('l10n_uy_einvoice_base.consumidor_final_partner_id', raise_if_not_found=False)
         if consumidor_final_id and data["partner_ids"] != [consumidor_final_id.id]:
-            data['partner_ids'].remove(consumidor_final_id.id)
+            if consumidor_final_id in data['partner_ids']:
+                data['partner_ids'].remove(consumidor_final_id.id)
 
         partners = self.env["res.partner"].browse(data["partner_ids"])
         return (
