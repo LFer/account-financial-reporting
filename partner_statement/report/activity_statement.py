@@ -257,11 +257,12 @@ class ActivityStatement(models.AbstractModel):
         aml_obj = self.env["account.move.line"].sudo()
         exchange_diff_journal = self.env.company.currency_exchange_journal_id.id
         for row in result:
-            aml_line = aml_obj.browse(row.get("ids", []))
+            aml_lines = aml_obj.browse(row.get("ids", []))
+            for aml_line in aml_lines:
 
-            if aml_line.journal_id.id == exchange_diff_journal:
-                print(f'ignoramos las lineas de diferencia de cambio {aml_line.name}')
-                continue
+                if aml_line.journal_id.id == exchange_diff_journal:
+                    print(f'ignoramos las lineas de diferencia de cambio {aml_line.name}')
+                    continue
 
             res[row.pop("partner_id")].append(row)
         return res
