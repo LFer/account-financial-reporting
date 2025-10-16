@@ -108,16 +108,18 @@ class OutstandingStatement(models.AbstractModel):
                 SELECT {sub}.partner_id, {sub}.currency_id, {sub}.move_id,
                     {sub}.date, {sub}.date_maturity, {sub}.debit, {sub}.credit,
                     {sub}.name, {sub}.ref, {sub}.blocked, {sub}.company_id,
-                    CASE WHEN {sub}.currency_id is not null
-                        THEN {sub}.open_amount_currency
-                        ELSE {sub}.open_amount
-                    END as open_amount, {sub}.id
+                    COALESCE(
+                        {sub}.open_amount_original_currency,
+                        {sub}.open_amount
+                    ) AS open_amount,
+                    {sub}.id
                 FROM {sub}
                 """,
                 locals(),
             ),
             "utf-8",
         )
+
 
     def _display_outstanding_lines_sql_q3(self, sub, company_id):
         return str(

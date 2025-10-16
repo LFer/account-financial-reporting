@@ -281,58 +281,97 @@ class ActivityStatement(models.AbstractModel):
         return str(
             self._cr.mogrify(
                 f"""
-            SELECT l.id as rel_id, m.name AS move_id, l.partner_id, l.date, l.name,
-                l.blocked, l.currency_id, l.company_id, {sub}.id,
-            CASE WHEN l.ref IS NOT NULL
-                THEN l.ref
-                ELSE m.ref
-            END as ref,
-            CASE WHEN (l.currency_id is not null AND l.amount_currency > 0.0)
-                THEN avg(l.amount_currency)
-                ELSE avg(l.debit)
-            END as debit,
-            CASE WHEN (l.currency_id is not null AND l.amount_currency < 0.0)
-                THEN avg(l.amount_currency * (-1))
-                ELSE avg(l.credit)
-            END as credit,
-            CASE WHEN l.balance > 0.0
-                THEN sum(coalesce(pc.amount, 0.0))
-                ELSE -sum(coalesce(pd.amount, 0.0))
-            END AS open_amount,
-            CASE WHEN l.balance > 0.0
-                THEN sum(coalesce(pc.debit_amount_currency, 0.0))
-                ELSE -sum(coalesce(pd.credit_amount_currency, 0.0))
-            END AS open_amount_currency,
-            CASE WHEN l.date_maturity is null
-                THEN l.date
-                ELSE l.date_maturity
-            END as date_maturity
-            FROM {sub}
-            LEFT JOIN account_partial_reconcile pd ON (
-                pd.debit_move_id = {sub}.id AND pd.max_date <= %(date_end)s)
-            LEFT JOIN account_partial_reconcile pc ON (
-                pc.credit_move_id = {sub}.id AND pc.max_date <= %(date_end)s)
-            LEFT JOIN account_move_line l ON (
-                pd.credit_move_id = l.id OR pc.debit_move_id = l.id)
-            LEFT JOIN account_move m ON (l.move_id = m.id)
-            WHERE l.date <= %(date_end)s AND m.state IN ('posted')
-            GROUP BY l.id, l.partner_id, m.name, l.date, l.date_maturity, l.name,
-                CASE WHEN l.ref IS NOT NULL
-                    THEN l.ref
-                    ELSE m.ref
-                END, {sub}.id,
-                l.blocked, l.currency_id, l.balance, l.amount_currency, l.company_id
-        """,
-                locals(),
+                SELECT
+                    l.id as rel_id,
+                    m.name AS move_id,
+                    l.partner_id,
+                    l.date,
+                    l.name,
+                    l.blocked,
+                    l.currency_id,
+                    l.company_id,
+                    {sub}.id,
+                    CASE WHEN l.ref IS NOT NULL THEN l.ref ELSE m.ref END as ref,
+                    CASE WHEN (l.currency_id is not null AND l.amount_currency > 0.0)
+                        THEN avg(l.amount_currency) ELSE avg(l.debit) END as debit,
+                    CASE WHEN (l.currency_id is not null AND l.amount_currency < 0.0)
+                        THEN avg(l.amount_currency * (-1)) ELSE avg(l.credit) END as credit,
+
+                    CASE
+                    WHEN orig.balance >= 0 THEN
+                        sum(
+                        COALESCE(
+                            CASE
+                            WHEN pd.debit_move_id = orig.id THEN pd.debit_amount_currency
+                            WHEN pc.credit_move_id = orig.id THEN pc.credit_amount_currency
+                            WHEN pd.credit_move_id = orig.id THEN pd.credit_amount_currency
+                            WHEN pc.debit_move_id = orig.id THEN pc.debit_amount_currency
+                            ELSE 0.0
+                            END,
+                            CASE
+                            WHEN pd.debit_move_id = orig.id THEN pd.amount
+                            WHEN pc.credit_move_id = orig.id THEN pc.amount
+                            WHEN pd.credit_move_id = orig.id THEN pd.amount
+                            WHEN pc.debit_move_id = orig.id THEN pc.amount
+                            ELSE 0.0
+                            END
+                        )
+                        )
+                    ELSE
+                        -sum(
+                        COALESCE(
+                            CASE
+                            WHEN pd.debit_move_id = orig.id THEN pd.debit_amount_currency
+                            WHEN pc.credit_move_id = orig.id THEN pc.credit_amount_currency
+                            WHEN pd.credit_move_id = orig.id THEN pd.credit_amount_currency
+                            WHEN pc.debit_move_id = orig.id THEN pc.debit_amount_currency
+                            ELSE 0.0
+                            END,
+                            CASE
+                            WHEN pd.debit_move_id = orig.id THEN pd.amount
+                            WHEN pc.credit_move_id = orig.id THEN pc.amount
+                            WHEN pd.credit_move_id = orig.id THEN pd.amount
+                            WHEN pc.debit_move_id = orig.id THEN pc.amount
+                            ELSE 0.0
+                            END
+                        )
+                        )
+                    END AS open_amount_original_currency,
+
+                    CASE WHEN l.balance > 0.0
+                        THEN sum(coalesce(pc.amount, 0.0))
+                        ELSE -sum(coalesce(pd.amount, 0.0))
+                    END AS open_amount,
+
+                    CASE WHEN l.date_maturity is null THEN l.date ELSE l.date_maturity END as date_maturity
+
+                FROM {sub}
+                LEFT JOIN account_partial_reconcile pd ON (
+                    pd.debit_move_id = {sub}.id AND pd.max_date <= %s)
+                LEFT JOIN account_partial_reconcile pc ON (
+                    pc.credit_move_id = {sub}.id AND pc.max_date <= %s)
+                LEFT JOIN account_move_line l ON (
+                    pd.credit_move_id = l.id OR pc.debit_move_id = l.id)
+                LEFT JOIN account_move m ON (l.move_id = m.id)
+                LEFT JOIN account_move_line orig ON (orig.id = {sub}.id)
+                WHERE l.date <= %s AND m.state IN ('posted')
+                GROUP BY l.id, l.partner_id, m.name, l.date, l.date_maturity, l.name,
+                        CASE WHEN l.ref IS NOT NULL THEN l.ref ELSE m.ref END, {sub}.id,
+                        l.blocked, l.currency_id, l.balance, l.amount_currency, l.company_id,
+                        orig.id, orig.balance
+                """,
+                (date_end, date_end, date_end),
             ),
             "utf-8",
         )
 
+    
     def _get_account_display_reconciled_lines(
         self, company_id, partner_ids, date_start, date_end, account_type
     ):
         partners = tuple(partner_ids)
 
+        
         # pylint: disable=E8103
         self.env.cr.execute(
             """
@@ -358,6 +397,7 @@ class ActivityStatement(models.AbstractModel):
             )
         )
         return self.env.cr.dictfetchall()
+    
 
     @api.model
     def _get_report_values(self, docids, data=None):

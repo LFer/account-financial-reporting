@@ -364,6 +364,7 @@ class ReportStatementCommon(models.AbstractModel):
         today = fields.Date.context_today(self)
         amount_field = data.get("amount_field", "amount")
 
+        
         # There should be relatively few of these, so to speed performance
         # we cache them - default needed if partner lang not set
         self._cr.execute(
@@ -450,6 +451,7 @@ class ReportStatementCommon(models.AbstractModel):
                 line_currency["lines"].extend(
                     self._add_currency_line(line, currencies[line["currency_id"]])
                 )
+                
                 for line2 in reconciled_lines:
                     if line2["id"] in line["ids"]:
                         line2["reconciled_line"] = True
@@ -457,7 +459,7 @@ class ReportStatementCommon(models.AbstractModel):
                         if line2["date"] >= date_start and line2["date"] <= date_end:
                             line2["outside-date-rank"] = False
                             if not line2["blocked"]:
-                                line["applied_amount"] += line2["open_amount"]
+                                line["applied_amount"] += -line2["open_amount"]
                         else:
                             line2["outside-date-rank"] = True
                         line2["date"] = format_date(
