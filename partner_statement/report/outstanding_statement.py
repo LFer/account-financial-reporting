@@ -54,7 +54,7 @@ class OutstandingStatement(models.AbstractModel):
             CASE WHEN l.balance > 0.0
                 THEN l.amount_currency - sum(coalesce(pd.debit_amount_currency, 0.0))
                 ELSE l.amount_currency + sum(coalesce(pc.credit_amount_currency, 0.0))
-            END AS open_amount_currency,
+            END AS open_amount_original_currency,
             CASE WHEN l.date_maturity is null
                 THEN l.date
                 ELSE l.date_maturity
