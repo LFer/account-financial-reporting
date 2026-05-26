@@ -343,9 +343,10 @@ class ReportStatementCommon(models.AbstractModel):
           }
         }
         """
+        print(data)
         company_id = data["company_id"]
         partner_ids = data["partner_ids"]
-        date_start = data.get("date_start")
+        date_start = data.get("initial_date")
         if date_start and isinstance(date_start, str):
             date_start = datetime.strptime(date_start, DEFAULT_SERVER_DATE_FORMAT).date()
         date_end = data["date_end"]

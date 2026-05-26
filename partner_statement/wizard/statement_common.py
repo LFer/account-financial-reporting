@@ -46,6 +46,7 @@ class StatementCommon(models.AbstractModel):
         "with a comma-separated list of expressions like 70%.",
     )
     hide_detailed = fields.Boolean(default=False, string="No mostrar detalles")
+    initial_date = fields.Date(string="Fecha de inicio")
 
     @api.model
     def _get_excluded_accounts_domain(self, selector):

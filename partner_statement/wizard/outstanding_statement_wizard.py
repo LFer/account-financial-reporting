@@ -19,6 +19,10 @@ class OutstandingStatementWizard(models.TransientModel):
                 "is_outstanding": True,
             }
         )
+
+        if self.initial_date:
+            res.update({"initial_date": self.initial_date})
+            
         ctx = self.env.context.copy()
         if ctx.get("from_menu", False):
             partner_domain = [('invoice_date_due', '<', date.today().isoformat()),('state', '=', 'posted'),('payment_state', 'in', ('not_paid', 'partial')),]
@@ -45,7 +49,7 @@ class OutstandingStatementWizard(models.TransientModel):
 
         consumidor_final_id = self.env.ref('l10n_uy_einvoice_base.consumidor_final_partner_id', raise_if_not_found=False)
         if consumidor_final_id and data["partner_ids"] != [consumidor_final_id.id]:
-            if consumidor_final_id in data['partner_ids']:
+            if consumidor_final_id.id in data['partner_ids']:
                 data['partner_ids'].remove(consumidor_final_id.id)
 
         partners = self.env["res.partner"].browse(data["partner_ids"])
