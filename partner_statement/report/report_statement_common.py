@@ -30,7 +30,7 @@ class ReportStatementCommon(models.AbstractModel):
             date = datetime.strptime(date, DEFAULT_SERVER_DATE_FORMAT)
         return date.strftime(date_format) if date else ""
 
-    def _get_account_display_lines(self, company_id, partner_ids, date_start, date_end, account_type):
+    def _get_account_display_lines(self, company_id, partner_ids, date_start, date_end, account_type, sent_to_dgi_filter):
         raise NotImplementedError
 
     def _get_account_initial_balance(self, company_id, partner_ids, date_start, account_type):
@@ -387,7 +387,7 @@ class ReportStatementCommon(models.AbstractModel):
         # get base data
         prior_day = date_start - timedelta(days=1) if date_start else None
         prior_lines = (self._get_account_display_prior_lines(company_id, partner_ids, prior_day, prior_day, account_type) if is_detailed else {})
-        lines = self._get_account_display_lines(company_id, partner_ids, date_start, date_end, account_type)
+        lines = self._get_account_display_lines(company_id, partner_ids, date_start, date_end, account_type, sent_to_dgi_filter=data.get('sent_to_dgi_filter'))
         ending_lines = (self._get_account_display_ending_lines(company_id, partner_ids, date_start, date_end, account_type) if is_detailed else {})
         reconciled_lines = (self._get_account_display_reconciled_lines(company_id, partner_ids, date_start, date_end, account_type) if is_activity else {})
         balances_forward = self._get_account_initial_balance(company_id, partner_ids, date_start, account_type)
@@ -550,6 +550,7 @@ class ReportStatementCommon(models.AbstractModel):
             "get_title": self._get_title,
             "get_aging_buckets_title": self._get_aging_buckets_title,
             "hide_detailed": data['hide_detailed'],
+            "sent_to_dgi_filter": data['sent_to_dgi_filter'],
         }
 
         return res_data

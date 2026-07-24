@@ -30,6 +30,7 @@ class OutstandingStatement(models.AbstractModel):
         date_end,
         account_type,
         initial_date=None,
+        sent_to_dgi_filter=False,
     ):
         partners = tuple(partners)
 
@@ -118,6 +119,17 @@ class OutstandingStatement(models.AbstractModel):
                         %(initial_date)s IS NULL
                         OR m.invoice_date >= %(initial_date)s
                     )
+                    AND (
+                        %(sent_to_dgi_filter)s = 'all'
+                        OR (
+                            %(sent_to_dgi_filter)s = 'only_electronic'
+                            AND m.cfe_emitido = TRUE
+                        )
+                        OR (
+                            %(sent_to_dgi_filter)s = 'only_manual'
+                            AND m.cfe_emitido IS NOT TRUE
+                        )
+                    )
 
                 GROUP BY
                     l.id,
@@ -181,7 +193,7 @@ class OutstandingStatement(models.AbstractModel):
         )
 
     def _get_account_display_lines(
-        self, company_id, partner_ids, date_start, date_end, account_type
+        self, company_id, partner_ids, date_start, date_end, account_type, sent_to_dgi_filter
     ):
         res = dict(map(lambda x: (x, []), partner_ids))
         partners = tuple(partner_ids)
@@ -197,7 +209,7 @@ class OutstandingStatement(models.AbstractModel):
         FROM Q3
         ORDER BY date, date_maturity, move_id""".format(
                 self._display_outstanding_lines_sql_q1(
-                    partners, date_end, account_type, date_start
+                    partners, date_end, account_type, date_start, sent_to_dgi_filter
                 ),
                 self._display_outstanding_lines_sql_q2("Q1"),
                 self._display_outstanding_lines_sql_q3("Q2", company_id),

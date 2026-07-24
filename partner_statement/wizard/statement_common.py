@@ -47,6 +47,7 @@ class StatementCommon(models.AbstractModel):
     )
     hide_detailed = fields.Boolean(default=False, string="No mostrar detalles")
     initial_date = fields.Date(string="Fecha de inicio")
+    sent_to_dgi_filter = fields.Selection([('only_electronic', 'Solo electrónicos'), ('only_manual', 'Solo manuales'), ('all', 'Todos')], string='Documentos a mostrar', default='all', required=True)
 
     @api.model
     def _get_excluded_accounts_domain(self, selector):
@@ -104,6 +105,7 @@ class StatementCommon(models.AbstractModel):
             "filter_negative_balances": self.filter_negative_balances,
             "excluded_accounts_ids": self._get_excluded_accounts().ids,
             "hide_detailed": self.hide_detailed,
+            "sent_to_dgi_filter": self.sent_to_dgi_filter,
         }
 
     def button_export_html(self):

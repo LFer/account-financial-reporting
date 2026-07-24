@@ -131,6 +131,9 @@
             <field name="date_end" position="before">
                 <field name="initial_date"/>
             </field>
+            <field name="show_aging_buckets" position="after">
+                <field name="sent_to_dgi_filter"/>
+            </field>
         </field>
     </record>
     <record id="activity_statement_wizard_view" model="ir.ui.view">
@@ -180,10 +183,7 @@
             </xpath>
         </field>
     </record>
-
     <!--    vamos a colocar el reporte de los caca de id externo outstanding_statement_wizard_action en el menu de informes de odoo-->
-
-
     <record id="outstanding_statement_wizard_custom_action" model="ir.actions.act_window">
         <field name="name">Estados de Cuenta</field>
         <field name="res_model">outstanding.statement.wizard</field>
@@ -192,7 +192,6 @@
         <field name="target">new</field>
         <field name="context" eval="{'from_menu':1,}"/>
     </record>
-
     <menuitem
         parent="account_financial_report.menu_oca_reports"
         action="outstanding_statement_wizard_custom_action"
