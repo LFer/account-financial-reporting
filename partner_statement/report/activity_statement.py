@@ -157,7 +157,7 @@ class ActivityStatement(models.AbstractModel):
             balance_start[row.pop("partner_id")].append(row)
         return balance_start
 
-    def _display_activity_lines_sql_q1(self, partners, date_start, date_end, account_type, sent_to_dgi_filter=False):
+    def _display_activity_lines_sql_q1(self, partners, date_start, date_end, account_type, sent_to_dgi_filter='all'):
         excluded_accounts_ids = tuple(self.env.context.get("excluded_accounts_ids", [])) or (-1,)
         show_only_overdue = self.env.context.get("show_only_overdue", False)
         payment_ref = _("Payment")
