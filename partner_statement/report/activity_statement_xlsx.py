@@ -70,6 +70,7 @@ class ActivityStatementXslx(models.AbstractModel):
                         (_("Original Amount"), FORMATS["format_theader_yellow_center"]),
                         (_("Applied Amount"), FORMATS["format_theader_yellow_center"]),
                         (_("Open Amount"), FORMATS["format_theader_yellow_center"]),
+                        (_("Balance"), FORMATS["format_theader_yellow_center"]),
                     ],
                     4,
                 )
@@ -96,6 +97,14 @@ class ActivityStatementXslx(models.AbstractModel):
             },
             {
                 "col_pos": 6,
+                "sheet_func": "write",
+                "args": (
+                    currency_data.get("balance_forward"),
+                    FORMATS["current_money_format"],
+                ),
+            },
+            {
+                "col_pos": 7,
                 "sheet_func": "write",
                 "args": (
                     currency_data.get("balance_forward"),
@@ -161,6 +170,7 @@ class ActivityStatementXslx(models.AbstractModel):
                         (line.get("amount", ""), current_money_format),
                         (line.get("applied_amount", ""), current_money_format),
                         (line.get("open_amount", ""), current_money_format),
+                        (line.get("running_balance", ""), current_money_format),
                     ],
                     4,
                 )
@@ -187,6 +197,16 @@ class ActivityStatementXslx(models.AbstractModel):
                 "sheet_func": "write",
                 "args": (
                     currency_data.get("amount_due"),
+                    FORMATS["current_money_format"],
+                ),
+            },
+            {
+                "col_pos": 7,
+                "sheet_func": "write",
+                "args": (
+                    currency_data.get(
+                        "running_balance", currency_data.get("balance_forward")
+                    ),
                     FORMATS["current_money_format"],
                 ),
             },
@@ -238,7 +258,7 @@ class ActivityStatementXslx(models.AbstractModel):
             currency=currency.display_name,
         )
         sheet.merge_range(
-            row_pos, 0, row_pos, 6, statement_header, FORMATS["format_left_bold"]
+            row_pos, 0, row_pos, 7, statement_header, FORMATS["format_left_bold"]
         )
         row_pos += 1
         row_pos = self._write_currency_header(row_pos, sheet, partner, currency, data)
@@ -326,11 +346,12 @@ class ActivityStatementXslx(models.AbstractModel):
         return row_pos
 
     def _size_columns(self, sheet, data):
-        for i in range(7):
-            sheet.set_column(0, i, 20)
+        sheet.set_column(0, 7, 20)
 
     def generate_xlsx_report(self, workbook, data, objects):
-        lang = objects.lang or self.env.user.partner_id.lang
+        lang = self.env.user.partner_id.lang
+        if len(objects) == 1 and objects.lang:
+            lang = objects.lang
         self = self.with_context(lang=lang)
         report_model = self.env["report.partner_statement.activity_statement"]
         self._define_formats(workbook)
@@ -349,7 +370,7 @@ class ActivityStatementXslx(models.AbstractModel):
             row_pos,
             0,
             row_pos,
-            6,
+            7,
             _("Statement of Account from %s") % (company.display_name,),
             FORMATS["format_ws_title"],
         )

@@ -442,6 +442,12 @@ class ReportStatementCommon(models.AbstractModel):
                     if not line["blocked"]:
                         line_currency["ending_balance"] += line[amount_field]
                     line["balance"] = line_currency["ending_balance"]
+                    line_currency.setdefault(
+                        "running_balance", line_currency["balance_forward"]
+                    )
+                    if not line["blocked"]:
+                        line_currency["running_balance"] += line[amount_field]
+                    line["running_balance"] = line_currency["running_balance"]
                 line["outside-date-rank"] = False
                 line["date"] = format_date(
                     line["date"], date_formats.get(partner_id, default_fmt)

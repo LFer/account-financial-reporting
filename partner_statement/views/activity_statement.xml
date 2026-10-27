@@ -17,6 +17,7 @@
                     <th class="amount">Original Amount</th>
                     <th class="amount">Applied Amount</th>
                     <th class="amount">Open Amount</th>
+                    <th class="amount">Balance</th>
                 </tr>
             </thead>
             <tbody>
@@ -27,6 +28,12 @@
                     </td>
                     <td t-if="is_detailed" colspan="3">Initial Balance</td>
                     <td t-else="" colspan="3">Balance Forward</td>
+                    <td class="amount">
+                        <span
+                            t-out="currency['balance_forward']"
+                            t-options="{'widget': 'monetary', 'display_currency': display_currency}"
+                        />
+                    </td>
                     <td class="amount">
                         <span
                             t-out="currency['balance_forward']"
@@ -91,6 +98,13 @@
                             t-if="not line['reconciled_line']"
                         />
                     </td>
+                    <td class="amount">
+                        <span
+                            t-out="line['running_balance']"
+                            t-options="{'widget': 'monetary', 'display_currency': display_currency}"
+                            t-if="not line['reconciled_line']"
+                        />
+                    </td>
                 </tr>
                 <tr>
                     <td />
@@ -101,6 +115,12 @@
                     <td class="amount">
                         <span
                             t-out="currency['amount_due']"
+                            t-options="{'widget': 'monetary', 'display_currency': display_currency}"
+                        />
+                    </td>
+                    <td class="amount">
+                        <span
+                            t-out="currency.get('running_balance', currency['balance_forward'])"
                             t-options="{'widget': 'monetary', 'display_currency': display_currency}"
                         />
                     </td>

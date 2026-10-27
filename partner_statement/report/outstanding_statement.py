@@ -193,7 +193,7 @@ class OutstandingStatement(models.AbstractModel):
         )
 
     def _get_account_display_lines(
-        self, company_id, partner_ids, date_start, date_end, account_type, sent_to_dgi_filter
+        self, company_id, partner_ids, date_start, date_end, account_type, sent_to_dgi_filter='all'
     ):
         res = dict(map(lambda x: (x, []), partner_ids))
         partners = tuple(partner_ids)
