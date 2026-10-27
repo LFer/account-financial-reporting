@@ -2,7 +2,6 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
 from odoo import models
-from datetime import date
 
 
 class OutstandingStatementWizard(models.TransientModel):
@@ -23,19 +22,58 @@ class OutstandingStatementWizard(models.TransientModel):
         if self.initial_date:
             res.update({"initial_date": self.initial_date})
             
-        ctx = self.env.context.copy()
-        if ctx.get("from_menu", False):
-            partner_domain = [('invoice_date_due', '<', date.today().isoformat()),('state', '=', 'posted'),('payment_state', 'in', ('not_paid', 'partial')),]
-            if self.account_type == 'asset_receivable':
-                partner_domain.append(('move_type', 'in', ('out_invoice', 'out_refund')))
-            if self.account_type == 'liability_payable':
-                partner_domain.append(('move_type', 'in', ('in_invoice', 'in_refund')))
-            partners = self.env['account.move'].search(partner_domain).mapped('partner_id')
-
-            res["partner_ids"] = partners.ids
-
+        if self.env.context.get("from_menu"):
+            res["partner_ids"] = self._get_partners_with_open_items_at_date()
 
         return res
+
+    def _get_partners_with_open_items_at_date(self):
+        """Use the statement cutoff, including items reconciled after that date."""
+        self.ensure_one()
+        excluded_account_ids = self._get_excluded_accounts().ids
+        self.env.cr.execute(
+            """
+            SELECT DISTINCT line.partner_id
+              FROM account_move_line line
+              JOIN account_move move ON move.id = line.move_id
+              JOIN account_account account ON account.id = line.account_id
+             WHERE line.partner_id IS NOT NULL
+               AND line.company_id = %(company_id)s
+               AND line.date <= %(date_end)s
+               AND move.state = 'posted'
+               AND account.account_type = %(account_type)s
+               AND (%(date_start)s IS NULL OR move.invoice_date >= %(date_start)s)
+               AND (NOT %(show_only_overdue)s OR COALESCE(line.date_maturity, line.date) <= %(date_end)s)
+               AND (NOT %(excluded_accounts)s OR line.account_id NOT IN %(excluded_account_ids)s)
+               AND (
+                   %(sent_to_dgi_filter)s = 'all'
+                   OR (%(sent_to_dgi_filter)s = 'only_electronic' AND move.cfe_emitido IS TRUE)
+                   OR (%(sent_to_dgi_filter)s = 'only_manual' AND move.cfe_emitido IS NOT TRUE)
+               )
+               AND (
+                   line.amount_residual != 0
+                   OR line.amount_residual_currency != 0
+                   OR EXISTS (
+                       SELECT 1
+                         FROM account_partial_reconcile partial
+                        WHERE (partial.debit_move_id = line.id OR partial.credit_move_id = line.id)
+                          AND partial.max_date > %(date_end)s
+                   )
+               )
+             ORDER BY line.partner_id
+            """,
+            {
+                "company_id": self.company_id.id,
+                "date_end": self.date_end,
+                "account_type": self.account_type,
+                "date_start": self.initial_date or None,
+                "show_only_overdue": self.show_only_overdue,
+                "excluded_accounts": bool(excluded_account_ids),
+                "excluded_account_ids": tuple(excluded_account_ids) or (-1,),
+                "sent_to_dgi_filter": self.sent_to_dgi_filter,
+            },
+        )
+        return [partner_id for (partner_id,) in self.env.cr.fetchall()]
 
     def _print_report(self, report_type):
         self.ensure_one()
