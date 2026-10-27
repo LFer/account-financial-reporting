@@ -275,7 +275,7 @@ class OutstandingStatementXslx(models.AbstractModel):
         sheet.write(
             row_pos,
             2,
-            data.get("data", {}).get(partners.ids[0], {}).get("today"),
+            data.get("data", {}).get(partners.ids[0], {}).get("end"),
             FORMATS["format_date_left"],
         )
         self._size_columns(sheet, data)

@@ -14,7 +14,7 @@ class ResPartner(models.Model):
 
                 converted_data.append({
                     'name': self.browse(partner_id).name,
-                    'date': data[partner_id]['today'],
+                    'date': data[partner_id]['end'],
                     'currency_id': currency_name,
                     'amount': value['amount_due']
                 })
