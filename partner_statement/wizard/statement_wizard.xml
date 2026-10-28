@@ -193,7 +193,7 @@
         <field name="context" eval="{'from_menu':1,}"/>
     </record>
     <menuitem
-        parent="account_financial_report.menu_oca_reports"
+        parent="account.menu_finance_reports"
         action="outstanding_statement_wizard_custom_action"
         id="menu_outstanding_statement_wizard"
         sequence="10"
