@@ -45,14 +45,24 @@ class DetailedActivityStatement(models.AbstractModel):
         self, company_id, partner_ids, date_start, date_end, account_type
     ):
         return self._get_account_display_lines2(
-            company_id, partner_ids, date_start, date_end, account_type
+            company_id,
+            partner_ids,
+            date_start,
+            date_end,
+            account_type,
+            self.env.context.get("sent_to_dgi_filter", "all"),
         )
 
     def _get_account_display_ending_lines(
         self, company_id, partner_ids, date_start, date_end, account_type
     ):
         return self._get_account_display_lines2(
-            company_id, partner_ids, date_start, date_end, account_type
+            company_id,
+            partner_ids,
+            date_start,
+            date_end,
+            account_type,
+            self.env.context.get("sent_to_dgi_filter", "all"),
         )
 
     def _add_currency_prior_line(self, line, currency):

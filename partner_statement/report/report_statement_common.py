@@ -54,6 +54,7 @@ class ReportStatementCommon(models.AbstractModel):
             self.env.context.get("excluded_accounts_ids", [])
         ) or (-1,)
         show_only_overdue = self.env.context.get("show_only_overdue", False)
+        sent_to_dgi_filter = self.env.context.get("sent_to_dgi_filter", "all")
         return str(
             self._cr.mogrify(
                 """
@@ -96,6 +97,11 @@ class ReportStatementCommon(models.AbstractModel):
                 ) AND l.date <= %(date_end)s AND not l.blocked
                   AND m.state IN ('posted')
                 AND aa.account_type = %(account_type)s
+                AND (
+                    %(sent_to_dgi_filter)s = 'all'
+                    OR (%(sent_to_dgi_filter)s = 'only_electronic' AND m.cfe_emitido IS TRUE)
+                    OR (%(sent_to_dgi_filter)s = 'only_manual' AND m.cfe_emitido IS NOT TRUE)
+                )
                 AND CASE
                     WHEN %(show_only_overdue)s
                     THEN COALESCE(l.date_maturity, l.date) <= %(date_end)s
@@ -363,6 +369,8 @@ class ReportStatementCommon(models.AbstractModel):
         show_only_overdue = data["show_only_overdue"]
         if show_only_overdue:
             self = self.with_context(show_only_overdue=show_only_overdue,)
+        sent_to_dgi_filter = data.get("sent_to_dgi_filter") or "all"
+        self = self.with_context(sent_to_dgi_filter=sent_to_dgi_filter)
         aging_type = data["aging_type"]
         is_activity = data.get("is_activity")
         is_detailed = data.get("is_detailed")

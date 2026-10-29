@@ -55,6 +55,7 @@ class ActivityStatement(models.AbstractModel):
         excluded_accounts_ids = tuple(
             self.env.context.get("excluded_accounts_ids", [])
         ) or (-1,)
+        sent_to_dgi_filter = self.env.context.get("sent_to_dgi_filter", "all")
         return str(
             self._cr.mogrify(
                 """
@@ -91,6 +92,11 @@ class ActivityStatement(models.AbstractModel):
                 AND l.date < %(date_start)s AND not l.blocked
                 AND m.state IN ('posted')
                 AND aa.account_type = %(account_type)s
+                AND (
+                    %(sent_to_dgi_filter)s = 'all'
+                    OR (%(sent_to_dgi_filter)s = 'only_electronic' AND m.cfe_emitido IS TRUE)
+                    OR (%(sent_to_dgi_filter)s = 'only_manual' AND m.cfe_emitido IS NOT TRUE)
+                )
                 AND (
                     (pd.id IS NOT NULL AND
                         pd.max_date < %(date_start)s) OR
@@ -161,6 +167,7 @@ class ActivityStatement(models.AbstractModel):
         excluded_accounts_ids = tuple(self.env.context.get("excluded_accounts_ids", [])) or (-1,)
         show_only_overdue = self.env.context.get("show_only_overdue", False)
         payment_ref = _("Payment")
+        sent_to_dgi_filter = sent_to_dgi_filter or "all"
         return str(
             self._cr.mogrify(
                 """
@@ -200,6 +207,11 @@ class ActivityStatement(models.AbstractModel):
                 AND l.date <= %(date_end)s
                 AND m.state IN ('posted')
                 AND aa.account_type = %(account_type)s
+                AND (
+                    %(sent_to_dgi_filter)s = 'all'
+                    OR (%(sent_to_dgi_filter)s = 'only_electronic' AND m.cfe_emitido IS TRUE)
+                    OR (%(sent_to_dgi_filter)s = 'only_manual' AND m.cfe_emitido IS NOT TRUE)
+                )
                 AND CASE
                     WHEN %(show_only_overdue)s
                     THEN COALESCE(l.date_maturity, l.date) <= %(date_end)s
@@ -387,7 +399,11 @@ class ActivityStatement(models.AbstractModel):
         FROM Q6
         ORDER BY date, date_maturity, move_id""".format(
                 self._display_activity_lines_sql_q1(
-                    partners, date_start, date_end, account_type
+                    partners,
+                    date_start,
+                    date_end,
+                    account_type,
+                    self.env.context.get("sent_to_dgi_filter", "all"),
                 ),
                 self._display_activity_lines_sql_q2("Q1", company_id),
                 self._display_activity_reconciled_lines_sql_q1("Q2"),

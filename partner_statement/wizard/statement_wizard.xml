@@ -62,6 +62,7 @@
                     <group name="aging_report">
                         <field name="show_only_overdue"/>
                         <field name="show_aging_buckets"/>
+                        <field name="sent_to_dgi_filter"/>
                         <field name="hide_detailed"/>
                         <field name="aging_type"/>
                     </group>
@@ -130,9 +131,6 @@
             </xpath>
             <field name="date_end" position="before">
                 <field name="initial_date"/>
-            </field>
-            <field name="show_aging_buckets" position="after">
-                <field name="sent_to_dgi_filter"/>
             </field>
         </field>
     </record>
